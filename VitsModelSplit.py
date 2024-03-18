@@ -210,6 +210,8 @@ class VitsModelSplit(VitsPreTrainedModel,VitsModel):
         input_ids: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         speaker_id: Optional[int] = None,
+        encoder_output = None,
+        
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
@@ -272,21 +274,26 @@ class VitsModelSplit(VitsPreTrainedModel,VitsModel):
             
         with torch.no_grad():
             
-            text_encoder_output = self.text_encoder(
-                input_ids=input_ids,
-                padding_mask=input_padding_mask,
-                attention_mask=attention_mask,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
-            )
+            text_encoder_output = encoder_output
+            
+            
+            
+            # text_encoder_output = self.text_encoder(
+            #     input_ids=input_ids,
+            #     padding_mask=input_padding_mask,
+            #     attention_mask=attention_mask,
+            #     output_attentions=output_attentions,
+            #     output_hidden_states=output_hidden_states,
+            #     return_dict=True,
+            # )
         
-        
-            hidden_states = text_encoder_output[0] if not return_dict else text_encoder_output.last_hidden_state
+            # print(text_encoder_output.last_hidden_state.shape)
+            
+            hidden_states = text_encoder_output.last_hidden_state
             hidden_states = hidden_states.transpose(1, 2)
             input_padding_mask = input_padding_mask.transpose(1, 2)
-            prior_means = text_encoder_output[1] if not return_dict else text_encoder_output.prior_means
-            prior_log_variances = text_encoder_output[2] if not return_dict else text_encoder_output.prior_log_variances
+            prior_means = text_encoder_output.prior_means
+            prior_log_variances = text_encoder_output.prior_log_variances
 
 
         latents, posterior_means, posterior_log_variances = self.posterior_encoder(

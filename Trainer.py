@@ -28,7 +28,8 @@ from plot import plot_alignment_to_numpy, plot_spectrogram_to_numpy
 
 #.............................................
 
-
+if is_wandb_available():
+    import wandb
 
 ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=False)
 logger = logging.getLogger(__name__)
@@ -180,8 +181,7 @@ def vits_trainin(
                 ):
     
     
-    if is_wandb_available():
-        import wandb
+
 
     send_example_telemetry("run_vits_finetuning", model_args, data_args)
     
@@ -192,14 +192,14 @@ def vits_trainin(
     )
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
-    logger.setLevel(logging.INFO if is_main_process(training_args.local_rank) else logging.WARN)
-    if is_main_process(training_args.local_rank):
-        transformers.utils.logging.set_verbosity_info()    
-    logger.info("Training/evaluation parameters %s", training_args)
+    # datasets.utils.logging.set_verbosity(log_level)
+    # transformers.utils.logging.set_verbosity(log_level)
+    # transformers.utils.logging.enable_default_handler()
+    # transformers.utils.logging.enable_explicit_format()
+    # # logger.setLevel(logging.INFO if is_main_process(training_args.local_rank) else logging.WARN)
+    # if is_main_process(training_args.local_rank):
+    #     transformers.utils.logging.set_verbosity_info()    
+
     
     
      
@@ -278,7 +278,7 @@ def vits_trainin(
         )
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
-            shuffle=not training_args.group_by_length,
+            shuffle=False,#not training_args.group_by_length,
             collate_fn=data_collator,
             batch_size=training_args.per_device_train_batch_size,
             num_workers=training_args.dataloader_num_workers,
@@ -429,12 +429,7 @@ def vits_trainin(
     else:
         initial_global_step = 0
 
-    progress_bar = tqdm(
-        range(0, training_args.max_steps),
-        initial=initial_global_step,
-        desc="Steps",
-        disable=not accelerator.is_local_main_process,
-    )
+
     
     #.......................loop training............................
 
@@ -446,15 +441,19 @@ def vits_trainin(
         gen_lr_scheduler.step()
         
         for step, batch in enumerate(train_dataloader):
-            # print(f"batch {step}, process{accelerator.process_index}, waveform {(batch['waveform'].shape)}, tokens {(batch['input_ids'].shape)}... ")
+            print(f"TRAINIG - batch {step}, process{accelerator.process_index}, waveform {(batch['waveform'].shape)}, tokens {(batch['input_ids'].shape)}... ")
             with accelerator.accumulate(model, discriminator):
                 # forward through model
+                
+                
                 model_outputs = model(
                     input_ids=batch["input_ids"],
                     attention_mask=batch["attention_mask"],
                     labels=batch["labels"],
                     labels_attention_mask=batch["labels_attention_mask"],
                     speaker_id=batch["speaker_id"],
+                    encoder_output = batch['text_encoder_output'],
+                    
                     return_dict=True,
                     monotonic_alignment_function=None,
                 )
@@ -561,7 +560,7 @@ def vits_trainin(
                     train_loss_real_disc,
                     train_loss_fake_disc,
                 ) = train_losses
-                progress_bar.update(1)
+                
                 global_step += 1
                 accelerator.log(
                     {
@@ -618,7 +617,7 @@ def vits_trainin(
                 "step_loss_real_disc": loss_real_disc.detach().item(),
                 "step_loss_fake_disc": loss_fake_disc.detach().item(),
             }
-            progress_bar.set_postfix(**logs)
+           
 
             if global_step >= training_args.max_steps:
                 break
@@ -644,6 +643,8 @@ def vits_trainin(
                             labels=batch["labels"],
                             labels_attention_mask=batch["labels_attention_mask"],
                             speaker_id=batch["speaker_id"],
+                            encoder_output = batch['text_encoder_output'],
+                            
                             return_dict=True,
                             monotonic_alignment_function=None,
                         )
@@ -746,6 +747,8 @@ def vits_trainin(
                         labels=batch["labels"],
                         labels_attention_mask=batch["labels_attention_mask"],
                         speaker_id=batch["speaker_id"],
+                        encoder_output = batch['text_encoder_output'],
+                        
                         return_dict=True,
                         monotonic_alignment_function=None,
                     )

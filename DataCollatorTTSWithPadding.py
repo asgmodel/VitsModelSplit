@@ -3,6 +3,8 @@ import numpy as np
 import torch
 from dataclasses import dataclass
 from transformers.feature_extraction_utils import BatchFeature
+
+from VitsOutput import VitsTextEncoderOutput
 #.............................................
 
 
@@ -58,12 +60,14 @@ class DataCollatorTTSWithPadding:
     def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
         # split inputs and labels since they have to be of different lengths and need
         # different padding methods
+        
         model_input_name = "input_ids"
-        input_ids = [{model_input_name: feature[model_input_name]} for feature in features]
-
+        
+        input_ids = [{model_input_name: feature[model_input_name][0]} for feature in features]
+        
         # pad input tokens
         batch = self.tokenizer.pad(input_ids, return_tensors="pt", return_attention_mask=self.forward_attention_mask)
-
+   
         # pad waveform
         waveforms = [np.array(feature["waveform"]) for feature in features]
         batch["waveform"] = self.pad_waveform(waveforms)
@@ -90,7 +94,25 @@ class DataCollatorTTSWithPadding:
         batch["speaker_id"] = (
             torch.tensor([feature["speaker_id"] for feature in features]) if "speaker_id" in features[0] else None
         )
+        
+   
+            
 
+        
+        # text_encoder_output = [{
+        #     'last_hidden_state':torch.tensor(features["text_encoder_output"]['last_hidden_state']),
+        #     'prior_log_variances':torch.tensor(feature["text_encoder_output"]['prior_log_variances']),
+        #     'prior_means':torch.tensor(feature["text_encoder_output"]['prior_means']),
+        #     } for feature in features]
+        
+        batch['text_encoder_output'] = VitsTextEncoderOutput(
+                last_hidden_state=torch.tensor(features[0]["text_encoder_output"]['last_hidden_state']),
+                prior_means=torch.tensor(features[0]["text_encoder_output"]['prior_means']),
+                prior_log_variances=torch.tensor(features[0]["text_encoder_output"]['prior_log_variances']),   
+            )
+        
+        # print("DataColl   ",batch.keys())
+        
         return batch
 
 

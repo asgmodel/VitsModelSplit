@@ -7,6 +7,8 @@ __pycache__/
 *.so
 models--facebook--mms-tts-ara/
 output/
+dataset/
+wandb/
 # Distribution / packaging
 .Python
 build/
