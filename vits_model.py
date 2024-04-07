@@ -2,7 +2,7 @@
 import numpy as np
 import torch
 from torch import nn
-from vits_config import VitsConfig,VitsPreTrainedModel
+from .vits_config import VitsConfig,VitsPreTrainedModel
 import math
 from typing import Any, Callable, Optional, Tuple, Union
 from discriminator import VitsDiscriminator
