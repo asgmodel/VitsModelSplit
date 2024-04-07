@@ -1,7 +1,7 @@
 
 import numpy as np
 import os
-from datasets import Dataset
+from datasets import Dataset,DatasetDict
 from typing import Union,List,Dict
 import torch
 from dataclasses import dataclass
@@ -150,7 +150,7 @@ class DataSetFeaturesCollector:
 #.............................................
 
 def run_dataset_features_collection(
-                         dataset,
+                         dataset_dir,
                          train_split_name ="train",
                          eval_split_name="eval",
                          tokenizer = None,
@@ -161,6 +161,8 @@ def run_dataset_features_collection(
                          output_dir = "dataset_features"
                          
                          ):
+    
+    dataset = DatasetDict.load_from_disk(dataset_dir)
     
     data_collator = DataSetFeaturesCollector(
         tokenizer = tokenizer,
@@ -213,9 +215,9 @@ import torch.utils.data
 
 class FeaturesCollectionDataset(torch.utils.data.Dataset):
     
-    def __init__(self,root_dir) -> None:
-        self.root_dir = root_dir
-        self.batchs_path = Path(self.root_dir).glob('*.bin')
+    def __init__(self,dataset_dir) -> None:
+        self.dataset_dir = dataset_dir
+        self.batchs_path = Path(self.dataset_dir).glob('*.bin')
         
     def __len__(self):
         return len(self.batchs_path)
