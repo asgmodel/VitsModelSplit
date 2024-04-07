@@ -223,7 +223,7 @@ def run_dataset_features_collection(
         os.makedirs(full_generation_dir,exist_ok=True)
         
         for step, batch in enumerate(full_generation_dataloader):
-            print(f"Eval Dataset - batch {step}, waveform {(batch['waveform'].shape)},tokens {(batch['input_ids'].shape)}... ")
+            print(f"Full Generation Dataset - batch {step}, waveform {(batch['waveform'].shape)},tokens {(batch['input_ids'].shape)}... ")
             fname = os.path.join(full_generation_dir,f"full-generation-batch-{step}.bin")
             with open(fname, "wb") as f:
                 torch.save(batch, f)  
