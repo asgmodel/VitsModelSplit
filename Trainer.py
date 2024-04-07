@@ -5,8 +5,8 @@ import tempfile
 import numpy as np
 import tqdm
 import wandb
-from DataCollatorTTSWithPadding import DataCollatorTTSWithPadding
-from VitsDiscriminator import VitsDiscriminator
+from data_collator import DataCollatorTTSWithPadding
+from discriminator import VitsDiscriminator
 
 from transformers import VitsModel
 import math
@@ -21,7 +21,7 @@ from datasets import DatasetDict
 import transformers
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.trainer_pt_utils import LengthGroupedSampler
-from feature_extraction_vits import VitsFeatureExtractor
+from feature_extraction import VitsFeatureExtractor
 from transformers.optimization import get_scheduler
 
 from plot import plot_alignment_to_numpy, plot_spectrogram_to_numpy
@@ -219,6 +219,7 @@ def vits_trainin(
         for flow in model.flow.flows:
             torch.nn.utils.weight_norm(flow.conv_pre)
             torch.nn.utils.weight_norm(flow.conv_post)
+    
     
     
     with training_args.main_process_first():
@@ -444,8 +445,6 @@ def vits_trainin(
             print(f"TRAINIG - batch {step}, process{accelerator.process_index}, waveform {(batch['waveform'].shape)}, tokens {(batch['input_ids'].shape)}... ")
             with accelerator.accumulate(model, discriminator):
                 # forward through model
-                
-                
                 model_outputs = model(
                     input_ids=batch["input_ids"],
                     attention_mask=batch["attention_mask"],

@@ -1,2 +1,0 @@
-# VitsModelSplit
-Vits Model Split

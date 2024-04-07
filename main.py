@@ -1,10 +1,10 @@
 import os
 import numpy as np
 from datasets import DatasetDict,Dataset
-from Arguments import DataTrainingArguments, ModelArguments, VITSTrainingArguments
-from VitsModelSplit import VitsModelSplit
+from arguments import DataTrainingArguments, ModelArguments, VITSTrainingArguments
+from VitsModelSplit import VitsModelSplit2
 from transformers import AutoTokenizer,HfArgumentParser
-from Trainer import vits_trainin   
+from trainer import vits_trainin   
 
 #...............................................................................
 
@@ -26,7 +26,7 @@ if __name__=="__main__":
     
     
 
-    model = VitsModelSplit.from_pretrained("facebook/mms-tts-ara",cache_dir="./")
+    model = VitsModelSplit2.from_pretrained("facebook/mms-tts-ara",cache_dir="./")
     tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-ara",cache_dir="./")
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VITSTrainingArguments))

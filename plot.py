@@ -21,12 +21,13 @@ def plot_spectrogram_to_numpy(spectrogram):
 
     fig, ax = plt.subplots(figsize=(10, 2))
     im = ax.imshow(spectrogram, aspect="auto", origin="lower", interpolation="none")
+    
     plt.colorbar(im, ax=ax)
     plt.xlabel("Frames")
     plt.ylabel("Channels")
     plt.tight_layout()
-
     fig.canvas.draw()
+    
     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     plt.close()
