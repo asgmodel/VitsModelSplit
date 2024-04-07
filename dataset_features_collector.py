@@ -210,14 +210,13 @@ def run_dataset_features_collection(
 
 #...........................................................................
 
-from pathlib import Path
 import torch.utils.data 
 
 class FeaturesCollectionDataset(torch.utils.data.Dataset):
     
     def __init__(self,dataset_dir) -> None:
         self.dataset_dir = dataset_dir
-        self.batchs_path = Path(self.dataset_dir).glob('*.bin')
+        self.batchs_path = [file for file in os.listdir(dataset_dir) if file.endswith('.bin')]
         
     def __len__(self):
         return len(self.batchs_path)

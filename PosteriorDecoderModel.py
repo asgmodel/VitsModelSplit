@@ -164,7 +164,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         # Save Config
         self.config.save_pretrained(training_args.output_dir)
         
-        train_dataset = FeaturesCollectionDataset(root_dir = train_dataset_dir)
+        train_dataset = FeaturesCollectionDataset(dataset_dir = train_dataset_dir)
         
         # train_dataloader = torch.utils.data.DataLoader(
         #     train_dataset,
@@ -174,7 +174,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         eval_dataset = None
         if training_args.do_eval:
-            eval_dataset = FeaturesCollectionDataset(root_dir = eval_dataset_dir)
+            eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir)
             # eval_dataloader = torch.utils.data.DataLoader(
             #     eval_dataset,
             #     shuffle=False,
