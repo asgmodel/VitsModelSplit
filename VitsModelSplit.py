@@ -19,7 +19,7 @@ from posterior_encoder import VitsPosteriorEncoder
 
 #.............................................
 
-class VitsModelSplit2(VitsPreTrainedModel):
+class VitsModelSplit(VitsPreTrainedModel):
     
     def __init__(self, config: VitsConfig):
         super().__init__(config)
@@ -454,7 +454,7 @@ class VitsModelSplit2(VitsPreTrainedModel):
     
 #.............................................................................................
 
-class VitsModelSplit(VitsPreTrainedModel,VitsModel):
+class VitsModelSplit2(VitsPreTrainedModel,VitsModel):
     
     def __init__(self, config: VitsConfig):
         super().__init__(config)
