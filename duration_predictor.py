@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from vits_config import VitsConfig
+from .vits_config import VitsConfig
 
 #.............................................
 

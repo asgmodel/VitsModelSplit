@@ -4,7 +4,7 @@ import torch
 from dataclasses import dataclass
 from transformers.feature_extraction_utils import BatchFeature
 
-from vits_output import VitsTextEncoderOutput
+from .vits_output import VitsTextEncoderOutput
 #.............................................
 
 

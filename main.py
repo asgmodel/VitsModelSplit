@@ -1,10 +1,11 @@
 import os
 import numpy as np
 from datasets import DatasetDict,Dataset
-from arguments import DataTrainingArguments, ModelArguments, VITSTrainingArguments
-from vits_model import VitsModelSplit2
 from transformers import AutoTokenizer,HfArgumentParser
-from trainer import vits_trainin   
+
+from .arguments import DataTrainingArguments, ModelArguments, VITSTrainingArguments
+from .vits_model import VitsModelSplit2
+from .trainer import vits_trainin   
 
 #...............................................................................
 

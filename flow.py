@@ -1,9 +1,8 @@
 
 import torch
 from torch import nn
-from vits_config import VitsConfig
 from typing import  Optional
-
+from .vits_config import VitsConfig
 #.............................................
 
 @torch.jit.script

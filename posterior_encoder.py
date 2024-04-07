@@ -2,8 +2,8 @@ import math
 from typing import Optional
 import torch
 from torch import nn
-from vits_config import VitsConfig
-from flow import VitsWaveNet
+from .vits_config import VitsConfig
+from .flow import VitsWaveNet
 
 #.............................................
 

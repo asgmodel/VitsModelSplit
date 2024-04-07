@@ -7,8 +7,9 @@ from transformers.activations import ACT2FN
 from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 from transformers.modeling_attn_mask_utils import _prepare_4d_attention_mask
 from transformers.modeling_outputs import BaseModelOutput  
-from vits_config import VitsConfig
-from vits_output import VitsTextEncoderOutput
+
+from .vits_config import VitsConfig
+from .vits_output import VitsTextEncoderOutput
 
 
 #....................................................

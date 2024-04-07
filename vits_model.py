@@ -2,19 +2,17 @@
 import numpy as np
 import torch
 from torch import nn
-from .vits_config import VitsConfig,VitsPreTrainedModel
 import math
 from typing import Any, Callable, Optional, Tuple, Union
-from discriminator import VitsDiscriminator
-from vits_output import VitsModelOutput, VitsTrainingOutput
-from transformers import VitsModel
 
-from flow import VitsResidualCouplingBlock
-from duration_predictor import VitsDurationPredictor, VitsStochasticDurationPredictor
-from encoder import VitsTextEncoder
-from decoder import VitsHifiGan
-from posterior_encoder import VitsPosteriorEncoder
-
+from .vits_config import VitsConfig,VitsPreTrainedModel
+from .flow import VitsResidualCouplingBlock
+from .duration_predictor import VitsDurationPredictor, VitsStochasticDurationPredictor
+from .encoder import VitsTextEncoder
+from .decoder import VitsHifiGan
+from .posterior_encoder import VitsPosteriorEncoder
+from .discriminator import VitsDiscriminator
+from .vits_output import VitsModelOutput, VitsTrainingOutput
 
 
 #.............................................

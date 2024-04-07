@@ -3,17 +3,17 @@ import sys
 from typing import Optional
 import numpy as np
 import torch
-from decoder import VitsHifiGan
-from posterior_encoder import VitsPosteriorEncoder
-from vits_config import VitsConfig, VitsPreTrainedModel
-from feature_extraction import VitsFeatureExtractor
 from torch import nn
-from vits_output import PosteriorDecoderModelOutput
 from transformers import set_seed
 import wandb
 import logging
-from  dataset_features_collector import FeaturesCollectionDataset
 
+from .vits_config import VitsConfig, VitsPreTrainedModel
+from .feature_extraction import VitsFeatureExtractor
+from .vits_output import PosteriorDecoderModelOutput
+from  .dataset_features_collector import FeaturesCollectionDataset
+from .posterior_encoder import VitsPosteriorEncoder
+from .decoder import VitsHifiGan
 
 class PosteriorDecoderModel(VitsPreTrainedModel):
     

@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 
-from vits_config import VitsPreTrainedModel
+from .vits_config import VitsPreTrainedModel
 
 
 #.............................................
