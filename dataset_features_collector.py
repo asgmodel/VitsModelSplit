@@ -153,6 +153,7 @@ def run_dataset_features_collection(
                          dataset_dir,
                          train_split_name ="train",
                          eval_split_name="eval",
+                         full_generation_name = 'full_generation_sample',
                          tokenizer = None,
                          model = None,
                          feature_extractor = None,
@@ -206,7 +207,26 @@ def run_dataset_features_collection(
             print(f"Eval Dataset - batch {step}, waveform {(batch['waveform'].shape)},tokens {(batch['input_ids'].shape)}... ")
             fname = os.path.join(eval_dir,f"eval-batch-{step}.bin")
             with open(fname, "wb") as f:
-                torch.save(batch, f)    
+                torch.save(batch, f)  
+    
+    if full_generation_name:
+        
+        full_generation_dataloader = torch.utils.data.DataLoader(
+            dataset[full_generation_name],
+            shuffle=False,
+            collate_fn=data_collator,
+            batch_size=1,
+            sampler=None,
+        )
+        
+        full_generation_dir = os.path.join(output_dir,"full_generation")
+        os.makedirs(full_generation_dir,exist_ok=True)
+        
+        for step, batch in enumerate(full_generation_dataloader):
+            print(f"Eval Dataset - batch {step}, waveform {(batch['waveform'].shape)},tokens {(batch['input_ids'].shape)}... ")
+            fname = os.path.join(full_generation_dir,f"full-generation-batch-{step}.bin")
+            with open(fname, "wb") as f:
+                torch.save(batch, f)  
 
 #...........................................................................
 

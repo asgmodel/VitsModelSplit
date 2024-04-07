@@ -140,6 +140,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
     def train(self,
               train_dataset_dir = None,
               eval_dataset_dir = None,
+              full_generation_dir = None,
               feature_extractor = VitsFeatureExtractor(),
               training_args = None,
               full_generation_sample_index= 0,
@@ -181,8 +182,8 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
             #     batch_size=training_args.per_device_eval_batch_size,
             # )
         
-        
-        full_generation_sample = train_dataset[full_generation_sample_index]
+        full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir)
+        full_generation_sample = full_generation_dataset[full_generation_sample_index]
         
         # init optimizer, lr_scheduler 
         
