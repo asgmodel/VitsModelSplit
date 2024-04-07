@@ -167,20 +167,9 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         train_dataset = FeaturesCollectionDataset(dataset_dir = train_dataset_dir)
         
-        # train_dataloader = torch.utils.data.DataLoader(
-        #     train_dataset,
-        #     shuffle=False,
-        #     batch_size=training_args.per_device_train_batch_size,
-        # )
-        
         eval_dataset = None
         if training_args.do_eval:
             eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir)
-            # eval_dataloader = torch.utils.data.DataLoader(
-            #     eval_dataset,
-            #     shuffle=False,
-            #     batch_size=training_args.per_device_eval_batch_size,
-            # )
         
         full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir)
         full_generation_sample = full_generation_dataset[full_generation_sample_index]
@@ -296,7 +285,9 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         
         with torch.no_grad():
-            full_generation_sample = full_generation_sample.to(self.device)
+            full_generation_sample = full_generation_sample
+            print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+            print(full_generation_sample)
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],
