@@ -72,7 +72,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         labels: Optional[torch.FloatTensor] = None,
         labels_attention_mask: Optional[torch.Tensor] = None,
         speaker_id: Optional[int] = None,
-        return_dict: Optional[bool] = None,
+        return_dict: Optional[bool] = True,
         ) :
         
         if self.config.num_speakers > 1 and speaker_id is not None:
