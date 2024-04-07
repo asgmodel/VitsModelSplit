@@ -153,7 +153,7 @@ def run_dataset_features_collection(
                          dataset_dir,
                          train_split_name ="train",
                          eval_split_name="eval",
-                         full_generation_name = 'full_generation_sample',
+                         full_generation_name = 'full_generation',
                          tokenizer = None,
                          model = None,
                          feature_extractor = None,
