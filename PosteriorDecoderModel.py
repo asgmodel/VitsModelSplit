@@ -140,7 +140,7 @@ class PosteriorDecoderModel(torch.nn.Module):
     
     #....................................
     
-    def train(self,
+    def trainer(self,
               train_dataset_dir = None,
               eval_dataset_dir = None,
               full_generation_dir = None,
