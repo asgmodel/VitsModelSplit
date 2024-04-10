@@ -172,8 +172,8 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
             eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir)
         
         full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir)
-        full_generation_sample = full_generation_dataset[full_generation_sample_index]
-        print(full_generation_sample)
+        self.full_generation_sample = full_generation_dataset[full_generation_sample_index]
+      
         # init optimizer, lr_scheduler 
         
         optimizer = torch.optim.AdamW(
@@ -186,7 +186,6 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
             optimizer, gamma=training_args.lr_decay, last_epoch=-1
             )
-        
         
         
         logger.info("***** Running training *****")
@@ -260,7 +259,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                     
                     
                     with torch.no_grad():
-                        full_generation_sample = full_generation_sample.to(self.device)
+                        full_generation_sample = self.full_generation_sample.to(self.device)
                         full_generation =self.forward(
                                 labels=full_generation_sample["labels"],
                                 labels_attention_mask=full_generation_sample["labels_attention_mask"],
@@ -286,7 +285,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         with torch.no_grad():
             
-            full_generation_sample = full_generation_sample.to(self.device)
+            full_generation_sample = self.full_generation_sample.to(self.device)
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],

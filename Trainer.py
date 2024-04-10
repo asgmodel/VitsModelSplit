@@ -1,13 +1,8 @@
 import os
 import shutil
 import tempfile
-
 import numpy as np
-import tqdm
 import wandb
-from data_collator import DataCollatorTTSWithPadding
-from discriminator import VitsDiscriminator
-
 from transformers import VitsModel
 import math
 import torch
@@ -16,15 +11,15 @@ from accelerate import Accelerator, DistributedDataParallelKwargs
 from transformers.utils import send_example_telemetry
 import logging
 import sys
-import datasets
-from datasets import DatasetDict
-import transformers
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.trainer_pt_utils import LengthGroupedSampler
-from feature_extraction import VitsFeatureExtractor
 from transformers.optimization import get_scheduler
 
-from plot import plot_alignment_to_numpy, plot_spectrogram_to_numpy
+
+from .data_collator import DataCollatorTTSWithPadding
+from .discriminator import VitsDiscriminator
+from .feature_extraction import VitsFeatureExtractor
+from .plot import plot_alignment_to_numpy, plot_spectrogram_to_numpy
 
 #.............................................
 

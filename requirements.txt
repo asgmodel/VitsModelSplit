@@ -1,7 +1,5 @@
-transformers>=4.35.1
-datasets[audio]>=2.14.7
-accelerate>=0.24.1
-matplotlib
+transformers
+accelerate
 wandb
 tensorboard
 Cython
