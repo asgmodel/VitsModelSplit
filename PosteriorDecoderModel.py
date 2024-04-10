@@ -8,6 +8,9 @@ from transformers import set_seed
 import wandb
 import logging
 
+from flow import VitsResidualCouplingBlock
+from vits_model import VitsModel
+
 from .vits_config import VitsConfig, VitsPreTrainedModel
 from .feature_extraction import VitsFeatureExtractor
 from .vits_output import PosteriorDecoderModelOutput
@@ -15,13 +18,15 @@ from  .dataset_features_collector import FeaturesCollectionDataset
 from .posterior_encoder import VitsPosteriorEncoder
 from .decoder import VitsHifiGan
 
-class PosteriorDecoderModel(torch.nn.Module):
+class PosteriorDecoderModel(VitsModel):
     
     def __init__(self, config: VitsConfig):
-        super().__init__()
+        super().__init__(config)
         
         self.config = config
+        
         self.posterior_encoder = VitsPosteriorEncoder(config)
+        self.flow = VitsResidualCouplingBlock(config)
         self.decoder = VitsHifiGan(config)
         
         if config.num_speakers > 1:
@@ -34,7 +39,7 @@ class PosteriorDecoderModel(torch.nn.Module):
         self.noise_scale_duration = config.noise_scale_duration
         self.segment_size = self.config.segment_size // self.config.hop_length
         
-        
+        self.post_init()
     
     
     #....................................
