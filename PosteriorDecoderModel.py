@@ -9,9 +9,6 @@ import wandb
 import logging
 import copy
 
-from flow import VitsResidualCouplingBlock
-from vits_model import VitsModel
-
 from .vits_config import VitsConfig, VitsPreTrainedModel
 from .feature_extraction import VitsFeatureExtractor
 from .vits_output import PosteriorDecoderModelOutput
@@ -19,7 +16,7 @@ from  .dataset_features_collector import FeaturesCollectionDataset
 from .posterior_encoder import VitsPosteriorEncoder
 from .decoder import VitsHifiGan
 
-class PosteriorDecoderModel(torch.nn.modules):
+class PosteriorDecoderModel(torch.nn.Module):
     
     def __init__(self, config,posterior_encoder,decoder):
         super().__init__()
