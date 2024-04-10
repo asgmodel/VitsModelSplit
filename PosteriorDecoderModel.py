@@ -259,7 +259,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                     
                     
                     with torch.no_grad():
-                        full_generation_sample = self.full_generation_sample.to(self.device)
+                        full_generation_sample = self.full_generation_sample
                         full_generation =self.forward(
                                 labels=full_generation_sample["labels"],
                                 labels_attention_mask=full_generation_sample["labels_attention_mask"],
@@ -285,7 +285,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         with torch.no_grad():
             
-            full_generation_sample = self.full_generation_sample.to(self.device)
+            full_generation_sample = self.full_generation_sample
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],
