@@ -259,7 +259,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                     
                     
                     with torch.no_grad():
-                        full_generation_sample = self.full_generation_sample
+                        full_generation_sample = self.full_generation_sample.to(self.device)
                         full_generation =self.forward(
                                 labels=full_generation_sample["labels"],
                                 labels_attention_mask=full_generation_sample["labels_attention_mask"],
@@ -271,7 +271,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                     wandb.log({
                     "eval_losses": eval_losses_sum,
                     "full generations samples": [
-                        wandb.Audio(w, caption=f"Full generation sample {epoch}", sample_rate=self.sampling_rate)
+                        wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}", sample_rate=self.sampling_rate)
                         for w in full_generation_waveform],})
                 
             wandb.log({"train_losses":train_losses_sum})
@@ -285,7 +285,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         
         with torch.no_grad():
             
-            full_generation_sample = self.full_generation_sample
+            full_generation_sample = self.full_generation_sample.to(self.device)
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],
@@ -295,7 +295,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         full_generation_waveform = full_generation.waveform.cpu().numpy()
         wandb.log({"eval_losses": eval_losses_sum,
                    "full generations samples": [
-                       wandb.Audio(w, caption=f"Full generation sample {epoch}",
+                       wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}",
                                    sample_rate=self.sampling_rate) for w in full_generation_waveform],
                    })
         
