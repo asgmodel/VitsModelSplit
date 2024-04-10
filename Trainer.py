@@ -674,6 +674,7 @@ def vits_trainin(
                         [model_outputs_train.waveform, padded_attn, specs, target_specs]
                     )
 
+
                     if accelerator.is_main_process:
                         with torch.no_grad():
                             speaker_id = None if num_speakers < 2 else list(range(min(5, num_speakers)))

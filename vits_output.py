@@ -15,6 +15,7 @@ class PosteriorDecoderModelOutput(ModelOutput):
     posterior_latents: torch.FloatTensor = None
     posterior_means: torch.FloatTensor = None
     posterior_log_variances: torch.FloatTensor = None
+    latents_slice : torch.FloatTensor = None
     ids_slice: torch.FloatTensor = None
     waveform: torch.FloatTensor = None
     

@@ -15,10 +15,10 @@ from  .dataset_features_collector import FeaturesCollectionDataset
 from .posterior_encoder import VitsPosteriorEncoder
 from .decoder import VitsHifiGan
 
-class PosteriorDecoderModel(VitsPreTrainedModel):
+class PosteriorDecoderModel(torch.nn.Module):
     
     def __init__(self, config: VitsConfig):
-        super().__init__(config)
+        super().__init__()
         
         self.config = config
         self.posterior_encoder = VitsPosteriorEncoder(config)
@@ -34,7 +34,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
         self.noise_scale_duration = config.noise_scale_duration
         self.segment_size = self.config.segment_size // self.config.hop_length
         
-        self.post_init()
+        
     
     
     #....................................
@@ -110,7 +110,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                                                             label_lengths, 
                                                             segment_size=self.segment_size
                                                             )
-
+        
         waveform = self.decoder(latents_slice, speaker_embeddings)
         
         if not return_dict:
@@ -119,6 +119,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                 posterior_latents,
                 posterior_means,
                 posterior_log_variances,
+                latents_slice,
                 ids_slice,
                 waveform,
             )
@@ -129,6 +130,7 @@ class PosteriorDecoderModel(VitsPreTrainedModel):
                 posterior_latents = posterior_latents,
                 posterior_means = posterior_means,
                 posterior_log_variances = posterior_log_variances,
+                latents_slice = latents_slice,
                 ids_slice = ids_slice,
                 waveform = waveform,
         )
