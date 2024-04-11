@@ -281,7 +281,12 @@ class PosteriorDecoderModel(torch.nn.Module):
             
         # add weight norms
         self.decoder.remove_weight_norm()
-        # self.decoder.save_pretrained(training_args.output_dir)
+        
+        
+        torch.save(self.posterior_encoder.state_dict(), os.path.join(training_args.output_dir,"posterior_encoder.pt"))
+        torch.save(self.decoder.state_dict(), os.path.join(training_args.output_dir,"decoder.pt"))
+
+      
         
         logger.info("Running final full generations samples... ")
         
