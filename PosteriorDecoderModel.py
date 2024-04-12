@@ -20,7 +20,7 @@ class PosteriorDecoderModel(torch.nn.Module):
     
     def __init__(self, config,posterior_encoder,decoder):
         super().__init__()
-        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = copy.deepcopy(config)
         self.posterior_encoder = copy.deepcopy(posterior_encoder)
         self.decoder = copy.deepcopy(decoder)
@@ -35,6 +35,7 @@ class PosteriorDecoderModel(torch.nn.Module):
         self.noise_scale_duration = config.noise_scale_duration
         self.segment_size = self.config.segment_size // self.config.hop_length
         
+        self.to(self.device)
         
     
     
@@ -204,7 +205,7 @@ class PosteriorDecoderModel(torch.nn.Module):
             lr_scheduler.step()
             
             for step, batch in enumerate(train_dataset):
-                
+                batch = batch.to(self.device)
                 # forward through model
                 outputs = self.forward(
                     labels=batch["labels"],
@@ -243,7 +244,7 @@ class PosteriorDecoderModel(torch.nn.Module):
                     logger.info("Running validation... ")
                     eval_losses_sum = 0
                     for step, batch in enumerate(eval_dataset):
-                        
+                        batch = batch.to(self.device)
                         with torch.no_grad():
                             outputs = self.forward(
                                 labels=batch["labels"],
@@ -263,6 +264,7 @@ class PosteriorDecoderModel(torch.nn.Module):
                     
                     with torch.no_grad():
                         full_generation_sample = self.full_generation_sample
+                        full_generation_sample = full_generation_sample.to(self.device)
                         full_generation =self.forward(
                                 labels=full_generation_sample["labels"],
                                 labels_attention_mask=full_generation_sample["labels_attention_mask"],
@@ -294,6 +296,8 @@ class PosteriorDecoderModel(torch.nn.Module):
         with torch.no_grad():
             
             full_generation_sample = self.full_generation_sample
+            full_generation_sample = full_generation_sample.to(self.device)
+            
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],
