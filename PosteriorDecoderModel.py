@@ -321,7 +321,6 @@ class PosteriorDecoderModel(torch.nn.Module):
                 })
         
         
-    
         logger.info("***** Training / Inference Done *****")
         
     #....................................
