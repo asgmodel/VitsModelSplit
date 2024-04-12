@@ -18,9 +18,14 @@ from .decoder import VitsHifiGan
 
 class PosteriorDecoderModel(torch.nn.Module):
     
-    def __init__(self, config,posterior_encoder,decoder):
+    def __init__(self, config,posterior_encoder,decoder,device=None):
         super().__init__()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        if device:
+            self.device = device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            
         self.config = copy.deepcopy(config)
         self.posterior_encoder = copy.deepcopy(posterior_encoder)
         self.decoder = copy.deepcopy(decoder)
@@ -169,13 +174,19 @@ class PosteriorDecoderModel(torch.nn.Module):
         # Save Config
         self.config.save_pretrained(training_args.output_dir)
         
-        train_dataset = FeaturesCollectionDataset(dataset_dir = train_dataset_dir)
+        train_dataset = FeaturesCollectionDataset(dataset_dir = train_dataset_dir,
+                                                  device = self.device
+                                                  )
         
         eval_dataset = None
         if training_args.do_eval:
-            eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir)
+            eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir,
+                                                     device = self.device
+                                                     )
         
-        full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir)
+        full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir,
+                                                            device = self.device
+                                                            )
         self.full_generation_sample = full_generation_dataset[full_generation_sample_index]
       
         # init optimizer, lr_scheduler 

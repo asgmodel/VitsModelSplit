@@ -234,10 +234,10 @@ import torch.utils.data
 
 class FeaturesCollectionDataset(torch.utils.data.Dataset):
     
-    def __init__(self,dataset_dir) -> None:
+    def __init__(self,dataset_dir,device='cpu') -> None:
         self.dataset_dir = dataset_dir
         self.batchs_path = [os.path.join(self.dataset_dir,file) for file in os.listdir(dataset_dir) if file.endswith('.bin')]
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device
         
     def __len__(self):
         return len(self.batchs_path)
