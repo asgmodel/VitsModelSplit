@@ -205,7 +205,7 @@ class PosteriorDecoderModel(torch.nn.Module):
             lr_scheduler.step()
             
             for step, batch in enumerate(train_dataset):
-                batch = batch.to(self.device)
+                
                 # forward through model
                 outputs = self.forward(
                     labels=batch["labels"],
@@ -244,7 +244,7 @@ class PosteriorDecoderModel(torch.nn.Module):
                     logger.info("Running validation... ")
                     eval_losses_sum = 0
                     for step, batch in enumerate(eval_dataset):
-                        batch = batch.to(self.device)
+                       
                         with torch.no_grad():
                             outputs = self.forward(
                                 labels=batch["labels"],
@@ -264,14 +264,13 @@ class PosteriorDecoderModel(torch.nn.Module):
                     
                     with torch.no_grad():
                         full_generation_sample = self.full_generation_sample
-                        full_generation_sample = full_generation_sample.to(self.device)
                         full_generation =self.forward(
                                 labels=full_generation_sample["labels"],
                                 labels_attention_mask=full_generation_sample["labels_attention_mask"],
                                 speaker_id=full_generation_sample["speaker_id"]
                                 )
                     
-                    full_generation_waveform = full_generation.waveform.cpu().numpy()
+                        full_generation_waveform = full_generation.waveform.cpu().numpy()
                     
                     wandb.log({
                     "eval_losses": eval_losses_sum,
@@ -296,20 +295,19 @@ class PosteriorDecoderModel(torch.nn.Module):
         with torch.no_grad():
             
             full_generation_sample = self.full_generation_sample
-            full_generation_sample = full_generation_sample.to(self.device)
-            
             full_generation = self.forward(
                     labels=full_generation_sample["labels"],
                     labels_attention_mask=full_generation_sample["labels_attention_mask"],
                     speaker_id=full_generation_sample["speaker_id"]
                     )
        
-        full_generation_waveform = full_generation.waveform.cpu().numpy()
+            full_generation_waveform = full_generation.waveform.cpu().numpy()
+            
         wandb.log({"eval_losses": eval_losses_sum,
-                   "full generations samples": [
-                       wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}",
-                                   sample_rate=self.sampling_rate) for w in full_generation_waveform],
-                   })
+                "full generations samples": [
+                    wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}",
+                                sample_rate=self.sampling_rate) for w in full_generation_waveform],
+                })
         
         
     

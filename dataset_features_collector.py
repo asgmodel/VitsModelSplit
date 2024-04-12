@@ -237,6 +237,7 @@ class FeaturesCollectionDataset(torch.utils.data.Dataset):
     def __init__(self,dataset_dir) -> None:
         self.dataset_dir = dataset_dir
         self.batchs_path = [os.path.join(self.dataset_dir,file) for file in os.listdir(dataset_dir) if file.endswith('.bin')]
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
     def __len__(self):
         return len(self.batchs_path)
@@ -244,7 +245,7 @@ class FeaturesCollectionDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         batch_name = self.batchs_path[idx]
         with open(batch_name, "rb") as f:
-            batch = torch.load(f)
+            batch = torch.load(f,map_location=torch.device(self.device))
         return batch
         
         
