@@ -137,6 +137,15 @@ class DataSetFeaturesCollector:
                                                         attention_mask = batch['attention_mask']
                                                         )
             batch['text_encoder_output'] = text_encoder_output 
+            posterior_latents, posterior_means, posterior_log_variances = self.model.posterior_encoder(
+                    batch['labels'], batch['labels_attention_mask'].unsqueeze(1).float()
+                   )
+            posterior_encode_output={
+              'posterior_latents':posterior_latents,
+              'posterior_means':posterior_means,
+              'posterior_log_variances':posterior_log_variances
+            }
+            batch['posterior_encode_output']=posterior_encode_output
 
 
         
