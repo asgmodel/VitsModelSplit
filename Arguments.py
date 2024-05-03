@@ -113,6 +113,11 @@ class VITSTrainingArguments(TrainingArguments):
     weight_gen: float = field(default=1.0, metadata={"help": "Generator loss weight"})
 
     weight_fmaps: float = field(default=1.0, metadata={"help": "Feature map loss weight"})
+    d_learning_rate: float = field(default=2e-4, metadata={"help": "Feature map loss weight"})
+   
+    d_adam_beta1: float = field(default=0.8, metadata={"help": "Feature map loss weight"})
+    d_adam_beta2: float = field(default=0.99, metadata={"help": "Feature map loss weight"})
+
 
 #.............................................................................................
 
