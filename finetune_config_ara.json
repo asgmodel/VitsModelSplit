@@ -38,7 +38,7 @@
     "d_adam_beta2": 0.99,
 
     "do_eval": true, 
-    "eval_steps": 5,
+    "eval_steps": 10,
     "per_device_eval_batch_size": 10,
     "max_eval_samples": 2, 
     "do_step_schedule_per_epoch": true,
