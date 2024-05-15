@@ -1010,7 +1010,7 @@ class VitsModel(VitsPreTrainedModel):
     #....................................
 
 
-    def trainer_to(self,
+    def trainer_to_cuda(self,
               train_dataset_dir = None,
               eval_dataset_dir = None,
               full_generation_dir = None,
@@ -1333,7 +1333,7 @@ class VitsModel(VitsPreTrainedModel):
 
     #....................................
 
-    def trainer_to_cuda(self,
+    def trainer_to(self,
               train_dataset_dir = None,
               eval_dataset_dir = None,
               full_generation_dir = None,
