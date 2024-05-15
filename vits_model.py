@@ -1023,7 +1023,8 @@ class VitsModel(VitsPreTrainedModel):
               is_used_posterior_encode=True,
               dict_state_grad_loss=None,
               nk=1,
-              path_save_model='./'
+              path_save_model='./',
+                        maf=None
 
 
               ):
@@ -1132,7 +1133,7 @@ class VitsModel(VitsPreTrainedModel):
                       text_encoder_output =None  if is_used_text_encoder else batch['text_encoder_output'],
                       posterior_encode_output=None  if is_used_posterior_encode else batch['posterior_encode_output'],
                       return_dict=True,
-                      monotonic_alignment_function=None,
+                      monotonic_alignment_function= maf,
                   )
 
                   mel_scaled_labels = batch["mel_scaled_input_features"]
