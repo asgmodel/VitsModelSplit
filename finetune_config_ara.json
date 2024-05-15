@@ -50,6 +50,6 @@
     "weight_duration": 1,
     "weight_mel": 35,
 
-    "fp16": true,
+    "fp16": false,
     "seed": 456
 }
