@@ -1492,13 +1492,15 @@ class VitsModel(VitsPreTrainedModel):
                   #  loss_dd.backward()
            
                 disc_optimizer.zero_grad()
-                scaler.scale(disc_optimizer).backward()
-                scaler.unscale_(loss_dd)
+                scaler.scale(loss_dd).backward()
+                scaler.unscale_(disc_optimizer)
                 #grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
                 scaler.step(disc_optimizer)
                   
                 
                 with autocast(enabled=training_args.fp16):
+
+
                   
                   
                   # backpropagate
@@ -1534,23 +1536,23 @@ class VitsModel(VitsPreTrainedModel):
                   discriminator_target, fmaps_target = self.discriminator(target_waveform)
                   
                   discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
-                 
-                  if dict_state_grad_loss['generator']:
-                      loss_fmaps = feature_loss(fmaps_target, fmaps_candidate)
-                      loss_gen, losses_gen = generator_loss(discriminator_candidate)
-                      loss_gen=loss_gen * training_args.weight_gen
-                      displayloss['loss_gen'] = loss_gen.detach().item()
-                  #   loss_gen.backward(retain_graph=True)
-                      loss_fmaps=loss_fmaps * training_args.weight_fmaps
-                      displayloss['loss_fmaps'] = loss_fmaps.detach().item()
-                  #   loss_fmaps.backward(retain_graph=True)
-                      total_generator_loss = (
-                          loss_duration
-                          + loss_mel
-                          + loss_kl
-                          + loss_fmaps
-                          + loss_gen
-                      )
+                  with autocast(enabled=False):
+                    if dict_state_grad_loss['generator']:
+                        loss_fmaps = feature_loss(fmaps_target, fmaps_candidate)
+                        loss_gen, losses_gen = generator_loss(discriminator_candidate)
+                        loss_gen=loss_gen * training_args.weight_gen
+                        displayloss['loss_gen'] = loss_gen.detach().item()
+                    #   loss_gen.backward(retain_graph=True)
+                        loss_fmaps=loss_fmaps * training_args.weight_fmaps
+                        displayloss['loss_fmaps'] = loss_fmaps.detach().item()
+                    #   loss_fmaps.backward(retain_graph=True)
+                        total_generator_loss = (
+                            loss_duration
+                            + loss_mel
+                            + loss_kl
+                            + loss_fmaps
+                            + loss_gen
+                        )
                      # total_generator_loss.backward()
                 scaler.scale(total_generator_loss).backward()
                 scaler.unscale_(optimizer)
