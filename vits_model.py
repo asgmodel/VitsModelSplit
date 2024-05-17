@@ -1167,8 +1167,8 @@ class VitsModel(VitsPreTrainedModel):
                   #  loss_dd.backward()
            
                 disc_optimizer.zero_grad()
-                scaler.scale(disc_optimizer).backward()
-                scaler.unscale_(loss_dd)
+                scaler.scale(loss_dd).backward()
+                scaler.unscale_(disc_optimizer )
                 #grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
                 scaler.step(disc_optimizer)
                   
