@@ -23,7 +23,7 @@ from typing import Optional
 import tempfile
 from torch.cuda.amp import autocast, GradScaler
 
-
+from IPython.display import clear_output
 from transformers import set_seed
 import wandb
 import logging
@@ -35,6 +35,7 @@ Lst=['input_ids',
  'labels_attention_mask',
  'mel_scaled_input_features']
 def covert_cuda_batch(d):
+  return d
   for key in Lst:
       d[key]=d[key].cuda(non_blocking=True)
   # for key in d['text_encoder_output']:
@@ -1751,6 +1752,7 @@ class VitsModel(VitsPreTrainedModel):
             disc_lr_scheduler.step()
             print(f"  Num Epochs = {epoch}")
             if epoch%nk==0:
+              clear_output()
               print('Save checkpoints Model :',int(epoch/nk))
               self.save_pretrained(path_save_model)
 
