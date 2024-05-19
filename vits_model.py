@@ -35,7 +35,7 @@ Lst=['input_ids',
  'labels_attention_mask',
  'mel_scaled_input_features']
 def covert_cuda_batch(d):
-  return d
+  #return d
   for key in Lst:
       d[key]=d[key].cuda(non_blocking=True)
   # for key in d['text_encoder_output']:
@@ -76,16 +76,31 @@ def feature_loss(feature_maps_real, feature_maps_generated):
             loss += torch.mean(torch.abs(real - generated))
 
     return loss * 2
+def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):
+  """
+  z_p, logs_q: [b, h, t_t]
+  m_p, logs_p: [b, h, t_t]
+  """
+  z_p = z_p.float()
+  logs_q = logs_q.float()
+  m_p = m_p.float()
+  logs_p = logs_p.float()
+  z_mask = z_mask.float()
 
+  kl = logs_p - logs_q - 0.5
+  kl += 0.5 * ((z_p - m_p)**2) * torch.exp(-2. * logs_p)
+  kl = torch.sum(kl * z_mask)
+  l = kl / torch.sum(z_mask)
+  return l
 #.............................................
-def kl_loss(prior_latents, posterior_log_variance, prior_means, prior_log_variance, labels_mask):
+# def kl_loss(prior_latents, posterior_log_variance, prior_means, prior_log_variance, labels_mask):
 
 
-  kl = prior_log_variance - posterior_log_variance - 0.5
-  kl += 0.5 * ((prior_latents - prior_means) ** 2) * torch.exp(-2.0 * prior_log_variance)
-  kl = torch.sum(kl * labels_mask)
-  loss = kl / torch.sum(labels_mask)
-  return loss
+#   kl = prior_log_variance - posterior_log_variance - 0.5
+#   kl += 0.5 * ((prior_latents - prior_means) ** 2) * torch.exp(-2.0 * prior_log_variance)
+#   kl = torch.sum(kl * labels_mask)
+#   loss = kl / torch.sum(labels_mask)
+#   return loss
 
 def get_state_grad_loss(k1=True,
                              mel=True,
@@ -93,6 +108,24 @@ def get_state_grad_loss(k1=True,
                              generator=True,
                              discriminator=True):
                              return {'k1':k1,'mel':mel,'duration':duration,'generator':generator,'discriminator':discriminator}
+
+
+def clip_grad_value_(parameters, clip_value, norm_type=2):
+  if isinstance(parameters, torch.Tensor):
+    parameters = [parameters]
+  parameters = list(filter(lambda p: p.grad is not None, parameters))
+  norm_type = float(norm_type)
+  if clip_value is not None:
+    clip_value = float(clip_value)
+
+  total_norm = 0
+  for p in parameters:
+    param_norm = p.grad.data.norm(norm_type)
+    total_norm += param_norm.item() ** norm_type
+    if clip_value is not None:
+      p.grad.data.clamp_(min=-clip_value, max=clip_value)
+  total_norm = total_norm ** (1. / norm_type)
+  return total_norm
 
 
 class VitsModel(VitsPreTrainedModel):
@@ -1066,6 +1099,8 @@ class VitsModel(VitsPreTrainedModel):
         self.full_generation_sample = full_generation_dataset[full_generation_sample_index]
 
         # init optimizer, lr_scheduler
+        discriminator=self.discriminator
+        self.discriminator=None
 
         optimizer = torch.optim.AdamW(
             self.parameters(),
@@ -1076,9 +1111,9 @@ class VitsModel(VitsPreTrainedModel):
 
          # hack to be able to train on multiple device
 
-
+        
         disc_optimizer = torch.optim.AdamW(
-                self.discriminator.parameters(),
+                discriminator.parameters(),
                 training_args.d_learning_rate,
                 betas=[training_args.d_adam_beta1, training_args.d_adam_beta2],
                 eps=training_args.adam_epsilon,
@@ -1106,7 +1141,10 @@ class VitsModel(VitsPreTrainedModel):
             print(f"  Num Epochs = {epoch}")
             if epoch%nk==0:
               print('Save checkpoints Model :',int(epoch/nk))
+              self.discriminator=discriminator
+              
               self.save_pretrained(path_save_model)
+              self.discriminator=None
 
 
 
@@ -1148,11 +1186,11 @@ class VitsModel(VitsPreTrainedModel):
                                       self.config.segment_size
                                   )
 
-                  discriminator_target, fmaps_target = self.discriminator(target_waveform)
-                  discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
-                  with autocast(enabled=False):
-                    if dict_state_grad_loss['discriminator']:
-                        disc_optimizer.zero_grad()
+                  discriminator_target, fmaps_target = discriminator(target_waveform)
+                  discriminator_candidate, fmaps_candidate = discriminator(model_outputs.waveform.detach())
+                  #with autocast(enabled=False):
+                  if dict_state_grad_loss['discriminator']:
+                       
 
                         loss_disc, loss_real_disc, loss_fake_disc = discriminator_loss(
                             discriminator_target, discriminator_candidate
@@ -1169,7 +1207,7 @@ class VitsModel(VitsPreTrainedModel):
                 disc_optimizer.zero_grad()
                 scaler.scale(loss_dd).backward()
                 scaler.unscale_(disc_optimizer )
-                #grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
+                grad_norm_d = clip_grad_value_(discriminator.parameters(), None)
                 scaler.step(disc_optimizer)
                   
                 
@@ -1206,9 +1244,9 @@ class VitsModel(VitsPreTrainedModel):
                   
                   
 
-                  discriminator_target, fmaps_target = self.discriminator(target_waveform)
+                  discriminator_target, fmaps_target = discriminator(target_waveform)
                   
-                  discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
+                  discriminator_candidate, fmaps_candidate = discriminator(model_outputs.waveform.detach())
                  
                   if dict_state_grad_loss['generator']:
                       loss_fmaps = feature_loss(fmaps_target, fmaps_candidate)
@@ -1227,9 +1265,10 @@ class VitsModel(VitsPreTrainedModel):
                           + loss_gen
                       )
                      # total_generator_loss.backward()
+                optimizer.zero_grad()
                 scaler.scale(total_generator_loss).backward()
                 scaler.unscale_(optimizer)
-               # grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
+                grad_norm_g = clip_grad_value_(self.parameters(), None)
                 scaler.step(optimizer)
                 scaler.update()
                 
@@ -1400,17 +1439,17 @@ class VitsModel(VitsPreTrainedModel):
          # hack to be able to train on multiple device
 
 
-        disc_optimizer = torch.optim.AdamW(
-                self.discriminator.parameters(),
-                training_args.d_learning_rate,
-                betas=[training_args.d_adam_beta1, training_args.d_adam_beta2],
-                eps=training_args.adam_epsilon,
-            )
+        # disc_optimizer = torch.optim.AdamW(
+        #         self.discriminator.parameters(),
+        #         training_args.d_learning_rate,
+        #         betas=[training_args.d_adam_beta1, training_args.d_adam_beta2],
+        #         eps=training_args.adam_epsilon,
+        #     )
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
             optimizer, gamma=training_args.lr_decay, last_epoch=-1
             )
-        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-                       disc_optimizer, gamma=training_args.lr_decay, last_epoch=-1)
+        # disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        #                disc_optimizer, gamma=training_args.lr_decay, last_epoch=-1)
 
 
         logger.info("***** Running training *****")
@@ -1425,7 +1464,7 @@ class VitsModel(VitsPreTrainedModel):
             train_losses_sum = 0
             lr_scheduler.step()
 
-            disc_lr_scheduler.step()
+            # disc_lr_scheduler.step()
             print(f"  Num Epochs = {epoch}")
             if epoch%nk==0:
               print('Save checkpoints Model :',int(epoch/nk))
@@ -1476,8 +1515,8 @@ class VitsModel(VitsPreTrainedModel):
                   discriminator_target, fmaps_target = self.discriminator(target_waveform)
                   discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
                   with autocast(enabled=False):
-                    if dict_state_grad_loss['discriminator']:
-                        disc_optimizer.zero_grad()
+                     if dict_state_grad_loss['discriminator']:
+                      #  disc_optimizer.zero_grad()
 
                         loss_disc, loss_real_disc, loss_fake_disc = discriminator_loss(
                             discriminator_target, discriminator_candidate
@@ -1490,12 +1529,12 @@ class VitsModel(VitsPreTrainedModel):
                         loss_dd = loss_disc# + loss_real_disc + loss_fake_disc
 
                   #  loss_dd.backward()
-           
-                disc_optimizer.zero_grad()
+                optimizer.zero_grad()
+                # disc_optimizer.zero_grad()
                 scaler.scale(loss_dd).backward()
-                scaler.unscale_(disc_optimizer)
-                #grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
-                scaler.step(disc_optimizer)
+                # scaler.unscale_(disc_optimizer)
+                #grad_norm_d = clip_grad_value_(self.discriminator.parameters(), None)
+                # scaler.step(disc_optimizer)
                   
                 
                 with autocast(enabled=training_args.fp16):
@@ -1504,7 +1543,15 @@ class VitsModel(VitsPreTrainedModel):
                   
                   
                   # backpropagate
-                  if dict_state_grad_loss['k1']:
+                 
+                  
+                  
+
+                  discriminator_target, fmaps_target = self.discriminator(target_waveform)
+                  
+                  discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
+                  with autocast(enabled=False):
+                    if dict_state_grad_loss['k1']:
                       loss_kl = kl_loss(
                           model_outputs.prior_latents,
                           model_outputs.posterior_log_variances,
@@ -1517,26 +1564,19 @@ class VitsModel(VitsPreTrainedModel):
                       #if displayloss['loss_kl']>=0:
                         #  loss_kl.backward()
 
-                  if dict_state_grad_loss['mel']:
-                      loss_mel = torch.nn.functional.l1_loss(mel_scaled_target, mel_scaled_generation)
-                      displayloss['loss_mel'] = loss_mel.detach().item()
-                      train_losses_sum = train_losses_sum + displayloss['loss_mel']
-                    # if displayloss['loss_mel']>=0:
-                        #  loss_mel.backward()
+                    if dict_state_grad_loss['mel']:
+                          loss_mel = torch.nn.functional.l1_loss(mel_scaled_target, mel_scaled_generation)
+                          displayloss['loss_mel'] = loss_mel.detach().item()
+                          train_losses_sum = train_losses_sum + displayloss['loss_mel']
+                        # if displayloss['loss_mel']>=0:
+                            #  loss_mel.backward()
 
-                  if dict_state_grad_loss['duration']:
-                      loss_duration=torch.sum(model_outputs.log_duration)*training_args.weight_duration
-                      displayloss['loss_duration'] = loss_duration.detach().item()
-                    #  if displayloss['loss_duration']>=0:
-                      #   loss_duration.backward()
+                    if dict_state_grad_loss['duration']:
+                          loss_duration=torch.sum(model_outputs.log_duration)*training_args.weight_duration
+                          displayloss['loss_duration'] = loss_duration.detach().item()
+                        #  if displayloss['loss_duration']>=0:
+                          #   loss_duration.backward()
 
-                  
-                  
-
-                  discriminator_target, fmaps_target = self.discriminator(target_waveform)
-                  
-                  discriminator_candidate, fmaps_candidate = self.discriminator(model_outputs.waveform.detach())
-                  with autocast(enabled=False):
                     if dict_state_grad_loss['generator']:
                         loss_fmaps = feature_loss(fmaps_target, fmaps_candidate)
                         loss_gen, losses_gen = generator_loss(discriminator_candidate)
@@ -1556,7 +1596,7 @@ class VitsModel(VitsPreTrainedModel):
                      # total_generator_loss.backward()
                 scaler.scale(total_generator_loss).backward()
                 scaler.unscale_(optimizer)
-               # grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
+                grad_norm_g = clip_grad_value_(self.parameters(), None)
                 scaler.step(optimizer)
                 scaler.update()
                 
@@ -1570,7 +1610,7 @@ class VitsModel(VitsPreTrainedModel):
 
 
 
-                print(f"TRAINIG - batch {step}, waveform {(batch['waveform'].shape)}, lr {lr_scheduler.get_last_lr()[0]}... ")
+                print(f"TRAINIG - batch {step},Grad G{grad_norm_g}, waveform {(batch['waveform'].shape)}, lr {lr_scheduler.get_last_lr()[0]}... ")
                 print(f"display loss function  enable  :{displayloss}")
 
                 global_step +=1
@@ -1969,3 +2009,335 @@ class VitsModel(VitsPreTrainedModel):
 
 
 
+
+    def trainer_to_cuda1(self,
+              train_dataset_dir = None,
+              eval_dataset_dir = None,
+              full_generation_dir = None,
+              feature_extractor = VitsFeatureExtractor(),
+              training_args = None,
+              full_generation_sample_index= 0,
+              project_name = "Posterior_Decoder_Finetuning",
+              wandbKey = "782b6a6e82bbb5a5348de0d3c7d40d1e76351e79",
+              is_used_text_encoder=True,
+              is_used_posterior_encode=True,
+              dict_state_grad_loss=None,
+              nk=1,
+              path_save_model='./',
+                        maf=None
+
+
+              ):
+        
+
+        os.makedirs(training_args.output_dir,exist_ok=True)
+        logger = logging.getLogger(f"{__name__} Training")
+        log_level = training_args.get_process_log_level()
+        logger.setLevel(log_level)
+
+        wandb.login(key= wandbKey)
+        wandb.init(project= project_name,config = training_args.to_dict())
+        if dict_state_grad_loss is None:
+            dict_state_grad_loss=get_state_grad_loss()
+
+
+        set_seed(training_args.seed)
+        scaler = GradScaler(enabled=training_args.fp16)
+
+        # Apply Weight Norm Decoder
+        # self.apply_weight_norm()
+        # Save Config
+        self.config.save_pretrained(training_args.output_dir)
+
+        train_dataset = FeaturesCollectionDataset(dataset_dir = train_dataset_dir,
+                                                  device = self.device
+                                                  )
+
+        eval_dataset = None
+        if training_args.do_eval:
+            eval_dataset = FeaturesCollectionDataset(dataset_dir = eval_dataset_dir,
+                                                     device = self.device
+                                                     )
+
+        full_generation_dataset = FeaturesCollectionDataset(dataset_dir = full_generation_dir,
+                                                            device = self.device
+                                                            )
+        self.full_generation_sample = full_generation_dataset[full_generation_sample_index]
+
+        # init optimizer, lr_scheduler
+        discriminator=self.discriminator
+        self.discriminator=None
+
+        optimizer = torch.optim.AdamW(
+            self.parameters(),
+            training_args.learning_rate,
+            betas=[training_args.adam_beta1, training_args.adam_beta2],
+            eps=training_args.adam_epsilon,
+        )
+
+         # hack to be able to train on multiple device
+
+        
+        disc_optimizer = torch.optim.AdamW(
+                discriminator.parameters(),
+                training_args.d_learning_rate,
+                betas=[training_args.d_adam_beta1, training_args.d_adam_beta2],
+                eps=training_args.adam_epsilon,
+            )
+        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer, gamma=training_args.lr_decay, last_epoch=-1
+            )
+        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+                       disc_optimizer, gamma=training_args.lr_decay, last_epoch=-1)
+
+
+        logger.info("***** Running training *****")
+        logger.info(f"  Num Epochs = {training_args.num_train_epochs}")
+
+
+        #.......................loop training............................
+
+        global_step = 0
+
+        for epoch in range(training_args.num_train_epochs):
+            train_losses_sum = 0
+            lr_scheduler.step()
+
+            disc_lr_scheduler.step()
+            print(f"  Num Epochs = {epoch}")
+            if epoch%nk==0:
+              clear_output()
+              print('Save checkpoints Model :',int(epoch/nk))
+              self.discriminator=discriminator
+              
+              self.save_pretrained(path_save_model)
+              self.discriminator=None
+
+
+
+
+            for step, batch in enumerate(train_dataset):
+
+                # forward through model
+                # outputs = self.forward(
+                #     labels=batch["labels"],
+                #     labels_attention_mask=batch["labels_attention_mask"],
+                #     speaker_id=batch["speaker_id"]
+                #     )
+                #if step==10:break
+                batch=covert_cuda_batch(batch)
+                displayloss={}
+
+                with autocast(enabled=training_args.fp16):
+
+
+                  model_outputs = self.forward_k(
+                      input_ids=batch["input_ids"],
+                      attention_mask=batch["attention_mask"],
+                      labels=batch["labels"],
+                      labels_attention_mask=batch["labels_attention_mask"],
+                      speaker_id=batch["speaker_id"],
+                      text_encoder_output =None  if is_used_text_encoder else batch['text_encoder_output'],
+                      posterior_encode_output=None  if is_used_posterior_encode else batch['posterior_encode_output'],
+                      return_dict=True,
+                      monotonic_alignment_function= maf,
+                  )
+
+                  mel_scaled_labels = batch["mel_scaled_input_features"]
+                  mel_scaled_target = self.slice_segments(mel_scaled_labels, model_outputs.ids_slice,self.segment_size)
+                  mel_scaled_generation = feature_extractor._torch_extract_fbank_features(model_outputs.waveform.squeeze(1))[1]
+
+                  target_waveform = batch["waveform"].transpose(1, 2)
+                  target_waveform = self.slice_segments(
+                                      target_waveform,
+                                      model_outputs.ids_slice * feature_extractor.hop_length,
+                                      self.config.segment_size
+                                  )
+
+                  discriminator_target, fmaps_target = discriminator(target_waveform)
+                  discriminator_candidate, fmaps_candidate = discriminator(model_outputs.waveform.detach())
+                  #with autocast(enabled=False):
+                  if dict_state_grad_loss['discriminator']:
+                       
+
+                        loss_disc, loss_real_disc, loss_fake_disc = discriminator_loss(
+                            discriminator_target, discriminator_candidate
+                        )
+
+                        dk={"step_loss_disc": loss_disc.detach().item(),
+                            "step_loss_real_disc": loss_real_disc.detach().item(),
+                            "step_loss_fake_disc": loss_fake_disc.detach().item()}
+                        displayloss['dict_loss_discriminator']=dk
+                        loss_dd = loss_disc# + loss_real_disc + loss_fake_disc
+
+                disc_optimizer.zero_grad()
+                loss_dd.backward()
+           
+               
+                # scaler.scale(loss_dd).backward()
+                # scaler.unscale_(disc_optimizer )
+                grad_norm_d = clip_grad_value_(discriminator.parameters(), None)
+                disc_optimizer.step()
+                  
+                
+                with autocast(enabled=training_args.fp16):
+                  
+                  
+                  # backpropagate
+                  if dict_state_grad_loss['k1']:
+                      loss_kl = kl_loss(
+                          model_outputs.prior_latents,
+                          model_outputs.posterior_log_variances,
+                          model_outputs.prior_means,
+                          model_outputs.prior_log_variances,
+                          model_outputs.labels_padding_mask,
+                      )
+                      loss_kl=loss_kl*training_args.weight_kl
+                      displayloss['loss_kl']=loss_kl.detach().item()
+                      #if displayloss['loss_kl']>=0:
+                        #  loss_kl.backward()
+
+                  if dict_state_grad_loss['mel']:
+                      loss_mel = torch.nn.functional.l1_loss(mel_scaled_target, mel_scaled_generation)
+                      displayloss['loss_mel'] = loss_mel.detach().item()
+                      train_losses_sum = train_losses_sum + displayloss['loss_mel']
+                    # if displayloss['loss_mel']>=0:
+                        #  loss_mel.backward()
+
+                  if dict_state_grad_loss['duration']:
+                      loss_duration=torch.sum(model_outputs.log_duration)*training_args.weight_duration
+                      displayloss['loss_duration'] = loss_duration.detach().item()
+                    #  if displayloss['loss_duration']>=0:
+                      #   loss_duration.backward()
+
+                  
+                  
+
+                  discriminator_target, fmaps_target = discriminator(target_waveform)
+                  
+                  discriminator_candidate, fmaps_candidate = discriminator(model_outputs.waveform.detach())
+                 
+                  if dict_state_grad_loss['generator']:
+                      loss_fmaps = feature_loss(fmaps_target, fmaps_candidate)
+                      loss_gen, losses_gen = generator_loss(discriminator_candidate)
+                      loss_gen=loss_gen * training_args.weight_gen
+                      displayloss['loss_gen'] = loss_gen.detach().item()
+                  #   loss_gen.backward(retain_graph=True)
+                      loss_fmaps=loss_fmaps * training_args.weight_fmaps
+                      displayloss['loss_fmaps'] = loss_fmaps.detach().item()
+                  #   loss_fmaps.backward(retain_graph=True)
+                      total_generator_loss = (
+                          loss_duration
+                          + loss_mel
+                          + loss_kl
+                          + loss_fmaps
+                          + loss_gen
+                      )
+                
+                optimizer.zero_grad()
+                total_generator_loss.backward()
+                # scaler.scale(total_generator_loss).backward()
+                # scaler.unscale_(optimizer)
+                grad_norm_g = clip_grad_value_(self.parameters(), None)
+                optimizer.step()
+                # scaler.update()
+                
+
+
+
+
+
+                # optimizer.step()
+
+
+
+
+                print(f"TRAINIG - batch {step}, waveform {(batch['waveform'].shape)}, lr {lr_scheduler.get_last_lr()[0]}... ")
+                print(f"display loss function  enable  :{displayloss}")
+
+                global_step +=1
+
+                # validation
+
+                do_eval = training_args.do_eval and (global_step % training_args.eval_steps == 0)
+                if do_eval:
+                    logger.info("Running validation... ")
+                    eval_losses_sum = 0
+                    cc=0;
+                    for step, batch in enumerate(eval_dataset):
+                        break
+                        if cc>2: break
+                        cc+=1
+                        with torch.no_grad():
+                            model_outputs = self.forward(
+                                input_ids=batch["input_ids"],
+                            attention_mask=batch["attention_mask"],
+                            labels=batch["labels"],
+                            labels_attention_mask=batch["labels_attention_mask"],
+                            speaker_id=batch["speaker_id"],
+
+
+                            return_dict=True,
+                            monotonic_alignment_function=None,
+                                )
+
+                        mel_scaled_labels = batch["mel_scaled_input_features"]
+                        mel_scaled_target = self.slice_segments(mel_scaled_labels, model_outputs.ids_slice,self.segment_size)
+                        mel_scaled_generation = feature_extractor._torch_extract_fbank_features(model_outputs.waveform.squeeze(1))[1]
+                        loss = loss_mel.detach().item()
+                        eval_losses_sum +=loss
+
+                        loss_mel = torch.nn.functional.l1_loss(mel_scaled_target, mel_scaled_generation)
+                        print(f"VALIDATION - batch {step}, waveform {(batch['waveform'].shape)}, step_loss_mel {loss} ... ")
+
+
+
+                    with torch.no_grad():
+                        full_generation_sample = self.full_generation_sample
+                        full_generation =self.forward(
+                          input_ids =full_generation_sample["input_ids"],
+                          attention_mask=full_generation_sample["attention_mask"],
+                          speaker_id=full_generation_sample["speaker_id"]
+                          )
+
+                        full_generation_waveform = full_generation.waveform.cpu().numpy()
+
+                    wandb.log({
+                    "eval_losses": eval_losses_sum,
+                    "full generations samples": [
+                        wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}", sample_rate=16000)
+                        for w in full_generation_waveform],})
+
+            wandb.log({"train_losses":train_losses_sum})
+
+        # add weight norms
+        # self.remove_weight_norm()
+
+        try:
+          torch.save(self.posterior_encoder.state_dict(), os.path.join(training_args.output_dir,"posterior_encoder.pt"))
+          torch.save(self.decoder.state_dict(), os.path.join(training_args.output_dir,"decoder.pt"))
+        except:pass
+
+
+        logger.info("Running final full generations samples... ")
+
+
+        with torch.no_grad():
+
+            full_generation_sample = self.full_generation_sample
+            full_generation = self.forward(
+                    input_ids=full_generation_sample["labels"],
+                    attention_mask=full_generation_sample["labels_attention_mask"],
+                    speaker_id=full_generation_sample["speaker_id"]
+                    )
+
+            full_generation_waveform = full_generation.waveform.cpu().numpy()
+
+        wandb.log({"eval_losses": eval_losses_sum,
+                "full generations samples": [
+                    wandb.Audio(w.reshape(-1), caption=f"Full generation sample {epoch}",
+                                sample_rate=16000) for w in full_generation_waveform],
+                })
+
+
+        logger.info("***** Training / Inference Done *****")
