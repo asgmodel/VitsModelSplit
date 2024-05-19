@@ -1139,7 +1139,8 @@ class VitsModel(VitsPreTrainedModel):
 
             disc_lr_scheduler.step()
             print(f"  Num Epochs = {epoch}")
-            if epoch%nk==0:
+            if (epoch+1)%nk==0:
+              clear_output()
               print('Save checkpoints Model :',int(epoch/nk))
               self.discriminator=discriminator
               
@@ -1466,13 +1467,11 @@ class VitsModel(VitsPreTrainedModel):
 
             # disc_lr_scheduler.step()
             print(f"  Num Epochs = {epoch}")
-            if epoch%nk==0:
-              print('Save checkpoints Model :',int(epoch/nk))
-              self.save_pretrained(path_save_model)
-
-
-
-
+            if (epoch+1)%nk==0:
+             clear_output()
+             print('Save checkpoints Model :',int(epoch/nk))
+             self.save_pretrained(path_save_model)
+       
             for step, batch in enumerate(train_dataset):
 
                 # forward through model
