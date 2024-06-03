@@ -2362,7 +2362,7 @@ class VitsModel(VitsPreTrainedModel):
         text_encoder_output=None,
         posterior_encode_output=None,
         monotonic_alignment_function: Optional[Callable] = None,
-        #speaker_embeddings=None
+        speaker_embeddings=None
     ) -> Union[Tuple[Any], VitsModelOutput]:
 
         #output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -2377,7 +2377,7 @@ class VitsModel(VitsPreTrainedModel):
         #else:
          #   input_padding_mask = torch.ones_like(input_ids).unsqueeze(-1).float()
 
-        speaker_embeddings=None
+        # speaker_embeddings=None
        # if labels_attention_mask is not None:
         labels_padding_mask = labels_attention_mask.unsqueeze(1).float()
         # else:
