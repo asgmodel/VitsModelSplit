@@ -2383,15 +2383,15 @@ class VitsModel(VitsPreTrainedModel):
         # else:
         #     labels_attention_mask = torch.ones((labels.shape[0], labels.shape[2])).float().to(self.device)
         #     labels_padding_mask = labels_attention_mask.unsqueeze(1)
-        #if text_encoder_output is None:
-        text_encoder_output = self.text_encoder(
-                input_ids=input_ids,
-                padding_mask=input_padding_mask,
-                attention_mask=attention_mask,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
-            )
+        if text_encoder_output is None:
+          text_encoder_output = self.text_encoder(
+                  input_ids=input_ids,
+                  padding_mask=input_padding_mask,
+                  attention_mask=attention_mask,
+                  output_attentions=output_attentions,
+                  output_hidden_states=output_hidden_states,
+                  return_dict=return_dict,
+              )
         #hidden_states = text_encoder_output[0] #if not return_dict else text_encoder_output.last_hidden_state
         hidden_states = text_encoder_output[0].transpose(1, 2)
         input_padding_mask = input_padding_mask.transpose(1, 2)
