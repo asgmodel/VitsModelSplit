@@ -2398,14 +2398,14 @@ class VitsModel(VitsPreTrainedModel):
         prior_means = text_encoder_output[1].transpose(1, 2) #if not return_dict else text_encoder_output.prior_means
         prior_log_variances = text_encoder_output[2].transpose(1, 2) #if not return_dict else text_encoder_output.prior_log_variances
 
-        # if posterior_encode_output is None:
-        #     latents, posterior_means, posterior_log_variances = self.posterior_encoder(
-        #         labels, labels_padding_mask, speaker_embeddings
-        #     )
-        # else:
-        latents=posterior_encode_output['posterior_latents']
-        posterior_means=posterior_encode_output['posterior_means']
-        posterior_log_variances=posterior_encode_output['posterior_log_variances']
+        if posterior_encode_output is None:
+             latents, posterior_means, posterior_log_variances = self.posterior_encoder(
+                labels, labels_padding_mask, speaker_embeddings
+            )
+        else:
+             latents=posterior_encode_output['posterior_latents']
+             posterior_means=posterior_encode_output['posterior_means']
+             posterior_log_variances=posterior_encode_output['posterior_log_variances']
 
         prior_latents = self.flow(latents, labels_padding_mask, speaker_embeddings, reverse=False)
 
