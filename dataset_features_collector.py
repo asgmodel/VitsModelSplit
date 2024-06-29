@@ -249,7 +249,7 @@ class FeaturesCollectionDataset(torch.utils.data.Dataset):
     
     def __init__(self,dataset_dir,device='cpu') -> None:
         self.dataset_dir = dataset_dir
-        self.batchs_path = [os.path.join(self.dataset_dir,file) for file in os.listdir(dataset_dir) if file.endswith('.bin')]
+        self.batchs_path = sorted([os.path.join(self.dataset_dir,file) for file in os.listdir(dataset_dir) if file.endswith('.bin')])
         self.device = device
         
     def __len__(self):
