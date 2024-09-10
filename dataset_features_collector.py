@@ -134,22 +134,22 @@ class DataSetFeaturesCollector:
             torch.tensor([feature["speaker_id"] for feature in dataset]) if "speaker_id" in dataset[0] else None
         )
         
-        with torch.no_grad():
-            padding_mask  =torch.ones_like(batch['input_ids']).unsqueeze(-1).float()
-            text_encoder_output = self.model.text_encoder(batch['input_ids'],
-                                                        padding_mask=padding_mask,
-                                                        attention_mask = batch['attention_mask']
-                                                        )
-            batch['text_encoder_output'] = text_encoder_output 
-            posterior_latents, posterior_means, posterior_log_variances = self.model.posterior_encoder(
-                    batch['labels'], batch['labels_attention_mask'].unsqueeze(1).float()
-                   )
-            posterior_encode_output={
-              'posterior_latents':posterior_latents,
-              'posterior_means':posterior_means,
-              'posterior_log_variances':posterior_log_variances
-            }
-            batch['posterior_encode_output']=posterior_encode_output
+        # with torch.no_grad():
+        #     padding_mask  =torch.ones_like(batch['input_ids']).unsqueeze(-1).float()
+        #     text_encoder_output = self.model.text_encoder(batch['input_ids'],
+        #                                                 padding_mask=padding_mask,
+        #                                                 attention_mask = batch['attention_mask']
+        #                                                 )
+        #     batch['text_encoder_output'] = text_encoder_output 
+        #     posterior_latents, posterior_means, posterior_log_variances = self.model.posterior_encoder(
+        #             batch['labels'], batch['labels_attention_mask'].unsqueeze(1).float()
+        #            )
+        #     posterior_encode_output={
+        #       'posterior_latents':posterior_latents,
+        #       'posterior_means':posterior_means,
+        #       'posterior_log_variances':posterior_log_variances
+        #     }
+        #     batch['posterior_encode_output']=posterior_encode_output
 
 
         
